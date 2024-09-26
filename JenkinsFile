@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                // Cloner le dépôt depuis GitHub
+                git 'https://github.com/csurqunix/StringInverser.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    // Vérifier le système d'exploitation
+                    if (isUnix()) {
+                        // Si le système est Unix, utiliser 'sh' pour exécuter 'make'
+                        sh 'make'
+                    } else {
+                        // Si le système est Windows, utiliser 'bat' pour exécuter 'make'
+                        bat 'make'
+                    }
+                }
+            }
+        }
+
+        stage('Permissions') {
+            when {
+                // Exécuter uniquement sur les systèmes Unix
+                expression { isUnix() }
+            }
+            steps {
+                script {
+                    // Donner les permissions d'exécution au fichier binaire
+                    sh 'chmod +x string_inverser'
+                }
+            }
+        }
+
+        stage('Nettoyage') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        // Nettoyer sur Unix
+                        sh 'make clean'
+                    } else {
+                        // Nettoyer sur Windows
+                        bat 'make clean'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Toujours archiver les artefacts pour vérification
+            archiveArtifacts artifacts: 'string_inverser', allowEmptyArchive: true
+        }
+    }
+}
